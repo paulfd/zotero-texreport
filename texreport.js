@@ -19,7 +19,7 @@
 /*
     ***** BEGIN LICENSE BLOCK *****
 
-    Copyright © 2014 Paul Ferrand
+    Copyright © 2017 Paul Ferrand
 
     ***** END LICENSE BLOCK *****
 */
