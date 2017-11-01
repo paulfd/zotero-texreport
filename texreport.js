@@ -7,7 +7,6 @@
 	"maxVersion": "",
 	"priority": 100,
 	"displayOptions": {
-		"exportCharset": "UTF-8xBOM",
 		"exportNotes": false
 	},
 	"inRepository": true,
@@ -24,12 +23,10 @@
     ***** END LICENSE BLOCK *****
 */
 
-var latex_header = `\\documentclass[paper=a4,fontsize=8pt,twocolumn]{scrartcl}
+var latex_header = `\\documentclass[paper=a4,fontsize=9pt,twocolumn]{scrartcl}
 \\usepackage[utf8]{inputenc}
-\\usepackage[T1]{fontenc}
 \\usepackage[a4paper,left=1.5cm,right=1.5cm,top=1.5cm,bottom=1.5cm]{geometry}
 \\setlength\\parindent{0pt}
-\\usepackage{textcomp}
 \\usepackage{times}
 \\usepackage[greek,english,french]{babel}
 \\def\\coldblrule{\\vspace{6pt} \\hrule width \\hsize \\kern 1mm \\hrule width \\hsize height 2pt \\vspace{6pt}}
@@ -40,9 +37,23 @@ var latex_header = `\\documentclass[paper=a4,fontsize=8pt,twocolumn]{scrartcl}
 var latex_footer =`\\end{document}`
 
 var re_p = new RegExp('<p>([^]*?)</p>', 'g');
+var re_href = new RegExp('<a href=\"(.*?)\">(.*?)</a>', 'g');
 var re_emph = new RegExp('<em>([^]*?)</em>', 'g');
+var re_i = new RegExp('<i>([^]*?)</i>', 'g');
 var re_strong = new RegExp('<strong>([^]*?)</strong>', 'g');
+var re_b = new RegExp('<b>([^]*?)</b>', 'g');
 var re_quotes = new RegExp('\"([^]*?)\"', 'g');
+
+function texCleanup(str){
+	str = str.replace(/<p><p>/g, "");
+	str = str.replace(/\&/g, "");
+	str = str.replace(/\#/g, "\\#");
+	str = str.replace("×", "$\\times$");
+	// str = str.replace(/_(?=[\$[^$]+?\$]*)/g, "\_");
+	str = str.replace(/<br>/g, "");
+	str = str.replace(/[^\x00-\xFF]/g, "");
+	return str;
+}
 
 function doExport() {
 	exportNotes = Zotero.getOption("exportNotes");
@@ -91,7 +102,7 @@ function doExport() {
 		}
 		if (item.abstractNote){
 			Zotero.write('\\colrule\r\n');
-			Zotero.write('\\textbf{Abstract: ' + item.abstractNote + '}\r\n');
+			Zotero.write('\\textbf{Abstract:} ' + item.abstractNote + '\r\n');
 		}
 		if (exportNotes){
 			for (var i=0; i < item.notes.length; i++) {
@@ -103,11 +114,18 @@ function doExport() {
 				str = item.notes[i].note;
 				// No <p>...</p>
 				str = str.replace(re_p, '$1\\newline');
+				str = str.replace(re_href, '\\href{$1}{$2}');
 				str = str.replace(re_quotes, '\`\`$1\'\'');
 				str = str.replace(re_strong, '\\textbf{$1}');
+				str = str.replace(re_b, '\\textbf{$1}');
 				str = str.replace(re_emph, '\\emph{$1}');
+				str = str.replace(re_i, '\\emph{$1}');
+				str = texCleanup(str);
+				if (str.slice(-8) == "\\newline"){
+					str = str.slice(0, -8);
+				}
 				Zotero.write(str);
-				// Zotero.write('\r\n')
+				Zotero.write('\r\n')
 			}
 		}
 		Zotero.write('\\coldblrule\r\n');
